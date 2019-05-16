@@ -12,7 +12,7 @@ public class CsvCreator
             FileWriter writer = new FileWriter(filePath);
             BufferedWriter bufferedWriter = new BufferedWriter(writer);
             PrintWriter printWriter = new PrintWriter(bufferedWriter);
-            printWriter.println("\"scalematesUrl\",\" brand\",\"brandCatno\"," +
+            printWriter.println("\"scalematesUrl\",\"brand\",\"brandCatno\"," +
                     "\"name\",\"scale\",\"description\",\"boxartUrl\",\"year\"");
             for(Item record : recordsToSave)
             {

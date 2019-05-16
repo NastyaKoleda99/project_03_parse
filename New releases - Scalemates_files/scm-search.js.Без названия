@@ -1,0 +1,273 @@
+function getTechnicalFacetname(name) {
+    name = name.split("ä").join("a").split("ü").join("u").split("ö").join("o").split(".").join("").split("?").join("").split("/").join("");
+    name = name.split("(").join("").split(")").join("").split("'").join("").split(" ").join("-").split(":").join("-").split(";").join("-");
+    name = name.split('"').join('').split('&amp;').join('-').split('&').join('-').split('!').join('');
+    return name;
+}
+function setFacetSort($sortby){$url = $("#searchurl").html().split("&amp;").join("&") + '&of=' + $sortby;$url = createPageURL($url);document.location.href = $url;return true;}
+
+function toggleFacet(checkbox){
+    $facetkey = $(checkbox).val();
+    $key = $(checkbox).prop('name');
+    $url = '';
+    var $searchurl=$("#searchurl");
+    var $temp = Math.floor(Date.now() / 1000);
+
+    $("#srfb").html("Refreshing results ...");
+    $('.fkcb').prop("disabled", "disabled");
+    $searchurl.html($searchurl.html().split("%5B%5D").join("[]"));
+
+
+    if ($(checkbox).prop('checked')) {
+        $('#cnt' + $key.replace("[]", "") + getTechnicalFacetname($facetkey)).css('color', '#000');
+        if ($key == 'fkSECTION[]') {
+            $("#srfb").html("");
+            $('.fkcb').removeAttr("disabled");
+            $url = $searchurl.html().split("&amp;").join("&") + "&mode=ajax&" + $key + "=" + encodeURIComponent($facetkey).replace("%3A", ":").replace("%2F", "/") + "";
+            $url = $url.replace("&mode=ajax", "").replace("fkSECTION%5B%5D=All&", "").replace("fkSECTION[]=All&", "");
+            document.location.href = createPageURL($url);
+            return true;
+        }
+        else {
+            $url = $searchurl.html().split("&amp;").join("&") + "&mode=ajax&" + $key + "=\"" + encodeURIComponent($facetkey).replace("%3A", ":").replace("%2F", "/") + "\"";
+        }
+    }
+    else {
+        if ($key == 'fkSECTION[]') {
+            $("#srfb").html("");
+            $('.fkcb').removeAttr("disabled");
+            $url = $searchurl.html().split("&amp;").join("&").replace("&" + $key + "=" + encodeURIComponent($facetkey).replace("%3A", ":").replace("%2F", "/"), "") + "&mode=ajax";
+            $url = $url.replace("%5B%5D", "[]").replace($key + "=" + encodeURIComponent($facetkey), "");
+            $url = $url.replace("?&", "?");
+            $url = $url + "&fkSECTION[]=All";
+            $url = $url.replace("&mode=ajax", "");
+            document.location.href = createPageURL($url);
+            return true;
+        } else if ($(checkbox).hasClass('prefilter')) {
+            $("#srfb").html("");
+            $('.fkcb').removeAttr("disabled");
+            $url = $searchurl.html().split("&amp;").join("&").replace("&" + $key + "=\"" + encodeURIComponent($facetkey).replace("%3A", ":").replace("%2F", "/") + "\"", "") + "&mode=ajax";
+            $url = $url.replace("%5B%5D", "[]");
+            $url = $url.replace("&mode=ajax", "");
+            document.location.href = createPageURL($url);
+            return true;
+        }
+        $('#cnt' + $key.replace("[]", "") + getTechnicalFacetname($facetkey)).css('color', '#666');
+        $url = $searchurl.html().split("&amp;").join("&").replace("&" + $key + "=\"" + encodeURIComponent($facetkey).replace("%3A", ":").replace("%2F", "/") + "\"", "") + "&mode=ajax";
+    }
+    setBrowserHistory($url);
+    refreshResults($url);
+}
+
+function setBrowserHistory($url){
+    console.log($url);
+    $url = $url.split("&amp;").join("&") + "&mode=ajax";
+    console.log($url);
+
+    var filtersSelected=[];
+
+    $("input:checkbox").each(function(){
+        var $this = $(this);
+        if($this.is(":checked")){
+            filtersSelected.push($this.prop("id"));
+        }
+    });
+
+    $visbileurl = $url.replace("&mode=ajax", "");
+    $visbileurl = $visbileurl.replace("&mode=ajax", "");
+
+    $hiddenurl = $visbileurl;
+    $visbileurl = createPageURL($visbileurl);
+    console.log($visbileurl);
+
+    history.pushState({"url": $hiddenurl,"checkedcbs":filtersSelected,"ssearch":""+$('#ssearch').val()}, 'New Page', $visbileurl);
+}
+
+
+function refreshResults($url) {
+
+
+
+    $.get($url, function (d) {
+        $("#results").html(d);
+        $demo = $('#facetsjson').html();
+        $('.fkcb').removeAttr("disabled");
+        $(jQuery.parseJSON($demo)).each(function () {
+            var $facet = this.facet;
+            var $fgfacet = jQuery('#fg' + $facet.replace('fk', '') + ' input:checked');
+            if ($key == $facet + '[]') {
+                if (!$fgfacet.length) {
+                    $('.c' + getTechnicalFacetname($facet)).hide();
+                }
+                $(this.info).each(function () {
+                    $('#c' + getTechnicalFacetname($facet) + '-' + getTechnicalFacetname(this.f)).show();
+                    $('#cnt' + getTechnicalFacetname($facet + this.f)).html('(' + this.v + ')');
+                    if ($facetkey == this.f) {
+                        $('#cnt' + getTechnicalFacetname($facet + this.f)).html('(' + this.v + ')');
+                    }
+                });
+            }
+            else {
+                $('.cnt' + getTechnicalFacetname($facet)).html('(0)');
+                $('.c' + getTechnicalFacetname($facet)).hide();
+                if (!$fgfacet.length) {
+                    $('.c' + getTechnicalFacetname($facet)).hide();
+                }
+                else {
+                    $('.c' + getTechnicalFacetname($facet)).hide();
+                }
+                $fgfacet.parent().show();
+                $(this.info).each(function () {
+                    $('#c' + getTechnicalFacetname($facet) + '-' + getTechnicalFacetname(this.f)).show();
+                    if ($('#cnt' + getTechnicalFacetname($facet + this.f)).length) {
+                        $('#cnt' + getTechnicalFacetname($facet + this.f)).html('(' + this.v + ')');
+                    }
+                    else {
+                        $('#' + $facet.replace('fk', 'fgd')).append(createFacetElement($facet, this.f, this.v));
+                    }
+                });
+            }
+
+        });
+    });
+}
+
+function createFacetElement(e,t,a){return $i="13",e=e.replace("fk",""),$keytech=getTechnicalFacetname(e),$fe='<div id="cfk'+$keytech+"-"+getTechnicalFacetname(t)+'" class="cfk'+$keytech+'"><input type="checkbox" class="fkcb" onchange="toggleFacet(this);" name="fk'+e+'[]" id="fk'+e+"-"+getTechnicalFacetname(t)+'" value="'+t+'"><label for="fk'+e+"-"+getTechnicalFacetname(t)+'">'+t.substring(0,19)+' <em class="ut c9 cntfk'+$keytech+'" id="cntfk'+getTechnicalFacetname(e+t)+'">('+a+")</em></label><br></div>",$fe}
+
+function resetFilter($key) {
+    $url = $("#searchurl").html();
+    $url = $url.split("%5B%5D").join("[]");
+    $('#fgd' + $key + ' input:checked').each(function () {
+        $url = $url.replace("&amp;fk" + $key + "[]=\"" + encodeURIComponent($(this).val()).replace("%3A", ":").replace("%2F", "/") + "\"", "");
+    });
+    $url = $url.split("&amp;").join("&");
+    $url = createPageURL($url);
+    document.location.href = $url;
+}
+
+function filterLink() {
+    $url = $("#searchurl").html().split("%5B%5D").join("[]").split("&amp;").join("&");
+    $url = createPageURL($url);$("#flfb").val('https://www.scalemates.com' + $url);$("#flfbc").show();$("#flfb").focus();$("#flfb").select();
+}
+
+function getParameterByName(url, name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(url);
+    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+function createPageURL($url) {
+    if ($url.indexOf("page=gallery") > -1) {
+        $url = $url.split('/search.php?').join('/profiles/mate.php?id=' + getParameterByName($url, 'fkMATEID[]') + '&p=articles&');
+    }
+    else if ($url.indexOf("page=stash") > -1) {
+        $url = $url.split('/search.php?').join('/profiles/mate.php?id=' + getParameterByName($url, 'fkSTASHMATE[]') + '&p=stash&');
+    }
+    else if ($url.indexOf("page=wishlist") > -1) {
+        $url = $url.split('/search.php?').join('/profiles/mate.php?id=' + getParameterByName($url, 'fkSTASHMATE[]') + '&p=wishlist&');
+    }
+    else if ($url.indexOf("page=completed") > -1) {
+        $url = $url.split('/search.php?').join('/profiles/mate.php?id=' + getParameterByName($url, 'fkSTASHMATE[]') + '&p=completed&');
+    }
+    else if ($url.indexOf("page=started") > -1) {
+        $url = $url.split('/search.php?').join('/profiles/mate.php?id=' + getParameterByName($url, 'fkSTASHMATE[]') + '&p=started&');
+    }
+    else if ($url.indexOf("page=onorder") > -1) {
+        $url = $url.split('/search.php?').join('/profiles/mate.php?id=' + getParameterByName($url, 'fkSTASHMATE[]') + '&p=onorder&');
+    }
+    else if ($url.indexOf("page=forsale") > -1) {
+        $url = $url.split('/search.php?').join('/profiles/mate.php?id=' + getParameterByName($url, 'fkSTASHMATE[]') + '&p=forsale&showmp=yes&');
+    }
+    else if ($url.indexOf("page=projects") > -1) {
+        $url = $url.split('/search.php?').join('/profiles/mate.php?id=' + getParameterByName($url, 'fkMATEID[]') + '&p=projects&');
+    }
+    else if ($url.indexOf("page=shops") > -1) {
+        $url = $url.split('/search.php?').join('/shops/index.php?show=all&');
+    }
+    else if ($url.indexOf("page=updates") > -1) {
+        $url = $url.split('/search.php?').join('/updates.php?');
+    }
+    else if ($url.indexOf("page=news") > -1) {
+        $url = $url.split('/search.php?').join('/news.php?');
+    }
+    else if ($url.indexOf("page=topics") > -1) {
+        $url = $url.split('/search.php?').join('/topics/index.php?');
+    }
+    return $url;
+}
+
+function getQueryParams(qs) {
+    qs = qs.split('+').join(' ');
+    var params = {},
+        tokens,
+        re = /[?&]?([^=]+)=([^&]*)/g;
+
+    while (tokens = re.exec(qs)) {
+        params[decodeURIComponent(tokens[1])] = decodeURIComponent(tokens[2]);
+    }
+    return params;
+}
+var $disablepopstate = false;
+$('#s').submit(function(e){
+    $disablepopstate = true;
+});
+
+$(window).on('popstate', function (e) {
+    var state = e.originalEvent.state;
+
+    if (state !== null) {
+        document.title = state.title;
+
+        $url = state.url.split("&amp;").join("&").replace("%3A", ":").replace("%2F", "/") + "&mode=ajax";
+
+        $("#srfb").html("Refreshing results after history....");
+        refreshResults($url);
+        $('input:checkbox').prop("checked", false);
+        state.checkedcbs.forEach(function(element) {
+            console.log("item"+$('#'+element).prop("id")+'|'+$('#'+element).prop("name"));
+            $('#'+element).prop("checked", true);
+        });
+        $('#ssearch').val(state.ssearch);
+    }
+    else if($disablepopstate){}
+    else{}
+});
+
+$(document).ready(function () {
+    var thandler;
+    $('#ssearch').on('input propertychange paste', function () {
+        clearTimeout(thandler);
+        $("#srfb").html("Refreshing results ...");
+        $('.fkcb').prop("disabled", "disabled");
+        $facetkey = 'xxxxxx';
+        $key = 'xxxxxx';
+        $temp = $("#searchurl").html().split("&amp;ssearch=");
+        thandler = setTimeout(function () {
+            if ($temp.length == 2) {
+                $tempx = $temp[1].split("&amp;");
+                if ($tempx.length == 2) {
+                    $last = $tempx[1];
+                    $last = $last.split("mode=ajax").join("");
+                    $x = $temp[0] + "&amp;ssearch=" + $('#ssearch').val() + "&amp;" + $last + "&amp;mode=ajax";
+                    console.log('$url(with extra):' + $x);
+                }
+                else if ($tempx.length > 2) {
+                    $tempy = $tempx.shift();
+                    $last = $tempx.join("&amp;");
+                    $last = $last.split("mode=ajax").join("");
+                    $x = $temp[0] + "&amp;ssearch=" + $('#ssearch').val() + $last + "&amp;mode=ajax";
+                }
+                else {
+                    $x = $temp[0] + "&amp;ssearch=" + $('#ssearch').val() + "&amp;mode=ajax";
+                }
+            }
+            else {
+                $x = $("#searchurl").html() + '&amp;ssearch=' + $('#ssearch').val() + "&amp;mode=ajax";
+            }
+            $("#searchurl").html($x);
+            setBrowserHistory($x);
+            refreshResults($("#searchurl").html().split("&amp;").join("&"));
+        }, 500);
+    });
+});
